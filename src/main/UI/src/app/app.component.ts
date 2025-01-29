@@ -20,8 +20,10 @@ export class AppComponent implements OnInit{
   private baseURL:string='http://localhost:8080';
 
   private getUrl:string = this.baseURL + '/room/reservation/v1/';
+  private getWelcomeUrl:string = this.baseURL + '/welcome/v1';
   private postUrl:string = this.baseURL + '/room/reservation/v1';
   public submitted!:boolean;
+  welcome!: string;
   roomsearch! : FormGroup;
   rooms! : Room[];
   request!:ReserveRoomRequest;
@@ -29,6 +31,12 @@ export class AppComponent implements OnInit{
   currentCheckOutVal!:string;
 
     ngOnInit(){
+
+      this.getWelcomeMessage().subscribe(msg=>{
+        console.log(Object.values(msg));
+        this.welcome = <any>Object.values(msg);
+      });
+
       this.roomsearch= new FormGroup({
         checkin: new FormControl(' '),
         checkout: new FormControl(' ')
@@ -81,6 +89,10 @@ export class AppComponent implements OnInit{
 
 
        return this.httpClient.get(this.baseURL + '/room/reservation/v1?checkin='+ this.currentCheckInVal + '&checkout='+this.currentCheckOutVal, {responseType: 'json'});
+    }
+
+    getWelcomeMessage(): Observable<any> {
+      return this.httpClient.get(this.getWelcomeUrl + '/threads', {responseType: 'json'});
     }
 
   }
