@@ -97,6 +97,18 @@ p {
   padding-bottom: 10px;
 }
 
+/* Target elements with the class "welcome-message" */
+.welcome-message {
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #EEEEEE;
+  margin: 4px 0;
+  padding: 10px;
+  border-radius: 2px;
+  background-color: #242723;
+}
+
 /* line 1, ../../../components/sass/_layout.scss */
 body {
   position: absolute;

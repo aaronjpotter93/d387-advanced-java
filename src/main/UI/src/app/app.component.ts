@@ -23,7 +23,7 @@ export class AppComponent implements OnInit{
   private getWelcomeUrl:string = this.baseURL + '/welcome/v1';
   private postUrl:string = this.baseURL + '/room/reservation/v1';
   public submitted!:boolean;
-  welcome!: string;
+  welcome: string[] = [];
   roomsearch! : FormGroup;
   rooms! : Room[];
   request!:ReserveRoomRequest;
@@ -32,9 +32,10 @@ export class AppComponent implements OnInit{
 
     ngOnInit(){
 
-      this.getWelcomeMessage().subscribe(msg=>{
-        console.log(Object.values(msg));
-        this.welcome = <any>Object.values(msg);
+      this.getWelcomeMessage().subscribe((message) => {
+        message.forEach((msg) => {
+          this.welcome.push(msg.toString());
+        })
       });
 
       this.roomsearch= new FormGroup({
@@ -91,8 +92,17 @@ export class AppComponent implements OnInit{
        return this.httpClient.get(this.baseURL + '/room/reservation/v1?checkin='+ this.currentCheckInVal + '&checkout='+this.currentCheckOutVal, {responseType: 'json'});
     }
 
-    getWelcomeMessage(): Observable<any> {
-      return this.httpClient.get(this.getWelcomeUrl + '/threads', {responseType: 'json'});
+    getWelcomeMessage(): Observable<WelcomeMessage[]> {
+      return this.httpClient.get<any[]>(this.getWelcomeUrl + '/threads').pipe(
+        map((messages) =>
+          messages.map(
+            (msg) => new WelcomeMessage(
+              msg.id.toString(),
+              msg.language,
+              msg.message
+            )
+          ))
+      );
     }
 
   }
@@ -104,7 +114,22 @@ export interface Roomsearch{
     checkout:string;
   }
 
+export class WelcomeMessage {
+  id: string;
+  language: string;
+  message: string;
 
+  constructor(id: string, language: string, message: string) {
+    this.id = id;
+    this.language = language;
+    this.message = message;
+  }
+
+  toString(): string {
+    return `[${this.language}] Thread ${this.id} : ${this.message}`;
+  }
+
+}
 
 
 export interface Room{

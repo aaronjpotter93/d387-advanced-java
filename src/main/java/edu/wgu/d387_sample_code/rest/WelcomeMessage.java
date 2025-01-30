@@ -1,9 +1,7 @@
 package edu.wgu.d387_sample_code.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wgu.d387_sample_code.model.response.WelcomeResponse;
-import edu.wgu.d387_sample_code.service.ThreadService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,44 +10,66 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+
+import static java.util.concurrent.Executors.newFixedThreadPool;
 
 @RestController
 @RequestMapping(ResourceConstants.WELCOME_MESSAGE_V1)
 @CrossOrigin
 public class WelcomeMessage {
 
-    @Autowired
-    ThreadService threadService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    static ExecutorService messageExecutor = newFixedThreadPool(2);
 
     @RequestMapping(
             path = "/threads",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<String> getWelcomeMessages() {
+    public ResponseEntity<List<WelcomeResponse>> getWelcomeMessages() {
+        List<WelcomeResponse> welcomeResponses = new ArrayList<>();
+        messageExecutor.submit(() -> {
+            Properties properties = new Properties();
+            try {
+                InputStream stream = new ClassPathResource("welcome_en.properties").getInputStream();
+                properties.load(stream);
+                WelcomeResponse welcomeMessage = new WelcomeResponse(1, "en", (properties.getProperty("welcome")));
+                welcomeResponses.add(welcomeMessage);
+            } catch (Exception e) {
+                WelcomeResponse welcomeMessage = new WelcomeResponse(1, "en", (properties.getProperty("error")));
+                welcomeResponses.add(welcomeMessage);
+                e.printStackTrace();
+            }
+        });
+        messageExecutor.submit(() -> {
+            Properties properties = new Properties();
+            try {
+                InputStream stream = new ClassPathResource("welcome_fr.properties").getInputStream();
+                properties.load(stream);
+                WelcomeResponse welcomeMessage = new WelcomeResponse(2, "fr", (properties.getProperty("welcome")));
+                welcomeResponses.add(welcomeMessage);
+            } catch (Exception e) {
+                WelcomeResponse welcomeMessage = new WelcomeResponse(2, "fr", (properties.getProperty("error")));
+                welcomeResponses.add(welcomeMessage);
+                e.printStackTrace();
+            }
+        });
+
+        // FIXME * on some runs this only returns one welcome message object.
+        // FIXME * on most runs, thread 1 gets displayed before thread 2. design flaw somewhere?
         try {
-            List<WelcomeResponse> welcomeResponses = threadService.spinUpThreads();
-
-            List<String> welcomeMessages = welcomeResponses.stream()
-                    .map(WelcomeResponse::toString)
-                    .collect(Collectors.toList());
-
-            String jsonResponse = objectMapper.writeValueAsString(welcomeMessages);
-
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(jsonResponse);
+                    .body(welcomeResponses);
 
         } catch (Exception e) {
-            String errorResponse = "Error occurred: " + e.getMessage();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.TEXT_PLAIN)
-                    .body(errorResponse);
+                    .body(welcomeResponses);
         }
     }
 }
