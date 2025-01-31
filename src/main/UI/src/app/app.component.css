@@ -108,6 +108,17 @@ p {
   border-radius: 2px;
   background-color: #242723;
 }
+/* Target elements with the class "live-presentation" */
+.live-presentation {
+  font-family: 'Arial', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #2E859B;
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #242723;
+}
 
 /* line 1, ../../../components/sass/_layout.scss */
 body {

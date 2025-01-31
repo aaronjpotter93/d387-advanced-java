@@ -25,7 +25,11 @@
 <main id="wrapper">
   <div class="scene" id="welcome">
     <article class="content">
-
+    <div class="row">
+      <div class="col-12">
+        <p class="live-presentation">Join us for an online live presentation held at the London Hotel on {{ presentation.day }} at <span *ngFor="let time of presentation.zonedTimes">{{ time }} | </span></p>
+      </div>
+    </div>
 
 
       <div class="row">

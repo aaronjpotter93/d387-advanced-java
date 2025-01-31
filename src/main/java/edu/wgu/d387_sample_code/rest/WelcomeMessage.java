@@ -30,7 +30,7 @@ public class WelcomeMessage {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<List<WelcomeResponse>> getWelcomeMessages() {
+    public ResponseEntity<List<WelcomeResponse>> getWelcomeMessages() throws InterruptedException {
         List<WelcomeResponse> welcomeResponses = new ArrayList<>();
         messageExecutor.submit(() -> {
             Properties properties = new Properties();
@@ -45,6 +45,7 @@ public class WelcomeMessage {
                 e.printStackTrace();
             }
         });
+        Thread.sleep(500);
         messageExecutor.submit(() -> {
             Properties properties = new Properties();
             try {
@@ -58,9 +59,9 @@ public class WelcomeMessage {
                 e.printStackTrace();
             }
         });
+        Thread.sleep(500);
 
         // FIXME * on some runs this only returns one welcome message object.
-        // FIXME * on most runs, thread 1 gets displayed before thread 2. design flaw somewhere?
         try {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)

@@ -13,37 +13,42 @@ import {map} from "rxjs/operators";
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit{
+export class AppComponent implements OnInit {
 
-  constructor(private httpClient:HttpClient){}
+  constructor(private httpClient: HttpClient) {
+  }
 
-  private baseURL:string='http://localhost:8080';
+  private baseURL: string = 'http://localhost:8080';
 
-  private getUrl:string = this.baseURL + '/room/reservation/v1/';
-  private getWelcomeUrl:string = this.baseURL + '/welcome/v1';
-  private postUrl:string = this.baseURL + '/room/reservation/v1';
-  public submitted!:boolean;
+  private getUrl: string = this.baseURL + '/room/reservation/v1/';
+  private getWelcomeUrl: string = this.baseURL + '/welcome/v1';
+  private getPresentationUrl: string = this.baseURL + '/presentation-message/v1';
+  private postUrl: string = this.baseURL + '/room/reservation/v1';
+  public submitted!: boolean;
   welcome: string[] = [];
-  roomsearch! : FormGroup;
-  rooms! : Room[];
-  request!:ReserveRoomRequest;
-  currentCheckInVal!:string;
-  currentCheckOutVal!:string;
+  presentation!: Presentation;
+  roomsearch!: FormGroup;
+  rooms!: Room[];
+  request!: ReserveRoomRequest;
+  currentCheckInVal!: string;
+  currentCheckOutVal!: string;
 
-    ngOnInit(){
+  ngOnInit() {
 
-      this.getWelcomeMessage().subscribe((message) => {
-        message.forEach((msg) => {
-          this.welcome.push(msg.toString());
-        })
-      });
+    this.getWelcomeMessage().subscribe((message) => {
+      message.forEach((msg) => {
+        this.welcome.push(msg.toString());
+      })
+    });
 
-      this.roomsearch= new FormGroup({
-        checkin: new FormControl(' '),
-        checkout: new FormControl(' ')
-      });
+    this.getPresentationMessage();
 
- //     this.rooms=ROOMS;
+    this.roomsearch = new FormGroup({
+      checkin: new FormControl(' '),
+      checkout: new FormControl(' ')
+    });
+
+    //     this.rooms=ROOMS;
 
 
     const roomsearchValueChanges$ = this.roomsearch.valueChanges;
@@ -55,57 +60,69 @@ export class AppComponent implements OnInit{
     });
   }
 
-    onSubmit({value,valid}:{value:Roomsearch,valid:boolean}){
-      this.getAll().subscribe(
+  onSubmit({value, valid}: { value: Roomsearch, valid: boolean }) {
+    this.getAll().subscribe(
+      rooms => {
+        console.log(Object.values(rooms)[0]);
+        this.rooms = <Room[]>Object.values(rooms)[0];
+      }
+    );
+  }
 
-        rooms => {console.log(Object.values(rooms)[0]);this.rooms=<Room[]>Object.values(rooms)[0]; }
+  reserveRoom(value: string) {
+    this.request = new ReserveRoomRequest(value, this.currentCheckInVal, this.currentCheckOutVal);
 
+    this.createReservation(this.request);
+  }
 
-      );
-    }
-    reserveRoom(value:string){
-      this.request = new ReserveRoomRequest(value, this.currentCheckInVal, this.currentCheckOutVal);
+  createReservation(body: ReserveRoomRequest) {
+    let bodyString = JSON.stringify(body); // Stringify payload
+    let headers = new Headers({'Content-Type': 'application/json'}); // ... Set content type to JSON
+    // let options = new RequestOptions({headers: headers}); // Create a request option
 
-      this.createReservation(this.request);
-    }
-    createReservation(body:ReserveRoomRequest) {
-      let bodyString = JSON.stringify(body); // Stringify payload
-      let headers = new Headers({'Content-Type': 'application/json'}); // ... Set content type to JSON
-     // let options = new RequestOptions({headers: headers}); // Create a request option
-
-     const options = {
+    const options = {
       headers: new HttpHeaders().append('key', 'value'),
 
     }
 
-      this.httpClient.post(this.postUrl, body, options)
-        .subscribe(res => console.log(res));
-    }
+    this.httpClient.post(this.postUrl, body, options)
+      .subscribe(res => console.log(res));
+  }
 
   /*mapRoom(response:HttpResponse<any>): Room[]{
     return response.body;
   }*/
 
-    getAll(): Observable<any> {
+  getAll(): Observable<any> {
 
 
-       return this.httpClient.get(this.baseURL + '/room/reservation/v1?checkin='+ this.currentCheckInVal + '&checkout='+this.currentCheckOutVal, {responseType: 'json'});
-    }
-
-    getWelcomeMessage(): Observable<WelcomeMessage[]> {
-      return this.httpClient.get<any[]>(this.getWelcomeUrl + '/threads').pipe(
-        map((messages) =>
-          messages.map(
-            (msg) => new WelcomeMessage(
-              msg.id.toString(),
-              msg.language,
-              msg.message
-            )
-          ))
-      );
-    }
-
+    return this.httpClient.get(this.baseURL + '/room/reservation/v1?checkin=' + this.currentCheckInVal + '&checkout=' + this.currentCheckOutVal, {responseType: 'json'});
   }
+
+  getWelcomeMessage(): Observable<WelcomeMessage[]> {
+    return this.httpClient.get<any[]>(`${this.getWelcomeUrl}/threads`).pipe(
+      map((messages) =>
+        messages.map(
+          (msg) => new WelcomeMessage(
+            msg.id.toString(),
+            msg.language,
+            msg.message
+          )
+        ))
+    );
+  }
+
+  getPresentationMessage(): void {
+    this.httpClient.get<Presentation>(`${this.getPresentationUrl}/times`).subscribe({
+      next: (data) => {
+        this.presentation = data;  // Direct assignment
+      },
+      error: (err) => {
+        console.error('Error fetching presentation:', err);
+      }
+    });
+  }
+}
 
 
 
@@ -131,6 +148,10 @@ export class WelcomeMessage {
 
 }
 
+export interface Presentation {
+  day: string;
+  zonedTimes: string[];
+}
 
 export interface Room{
   id:string;
