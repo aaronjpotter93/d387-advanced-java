@@ -45,7 +45,6 @@ public class WelcomeMessage {
                 e.printStackTrace();
             }
         });
-        Thread.sleep(500);
         messageExecutor.submit(() -> {
             Properties properties = new Properties();
             try {
@@ -59,9 +58,8 @@ public class WelcomeMessage {
                 e.printStackTrace();
             }
         });
-        Thread.sleep(500);
+        Thread.sleep(100);
 
-        // FIXME * on some runs this only returns one welcome message object.
         try {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
